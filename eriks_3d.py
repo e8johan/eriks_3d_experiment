@@ -166,6 +166,23 @@ class FlatQuad(Object):
     def vertexes(self):
         return self._vs
 
+class StlMesh(Object):
+    def __init__(self, filename):
+        super().__init__()
+        self._ts = []
+        self._vs = []
+        # TODO load the actual STL here
+
+    def trigons(self):
+        return self._ts
+
+    def vertexes(self):
+        return self._vs
+
+def projection(d, screen_center, v):
+    f = d/(v.z+d)
+    return (screen_center[0] + v.x*f, screen_center[1] + v.y*f)
+
 def render_objects(screen, d, objects):
     w = screen.get_width()
     h = screen.get_height()
@@ -189,7 +206,7 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [Box(-100, -100, 100, 200, 200, 200), Box(-400, -50, 100, 100, 100, 100)]
+objects = [Box(-100, -100, 100, 200, 200, 200), StlMesh("Owl_Facing_Left_fixed_sc.stl")]
 
 projection_transformation = Projection(640)
 
@@ -224,7 +241,6 @@ while running:
     objects[0].add_transformation(projection_transformation)
 
     objects[1].reset_transformation()
-    objects[1].add_transformation(Translate(350, 0, -150))
     objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
     objects[1].add_transformation(Translate(-350, 0, 150))
     objects[1].add_transformation(projection_transformation)
