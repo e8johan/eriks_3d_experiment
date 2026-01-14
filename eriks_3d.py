@@ -25,19 +25,20 @@ class Object:
         """
         return True
 
-class Blupp(Object):
-    def __init__(self, z):
-        self.z = z
+class FlatQuad(Object):
+    def __init__(self, x, y, z, w, h):
+        self._vs = [Vector3(x, y, z), Vector3(x+w, y, z), Vector3(x+w, y+w, z), Vector3(x, y+w, z)]
 
     def trigons(self):
-        return [(0, 1, 2)]
+        return [(0, 1, 3), (1, 2, 3)]
 
     def vertexes(self):
-        return [Vector3(-100, -100, self.z), Vector3(100, -500, self.z), Vector3(400, 300, self.z)]
+        return self._vs
 
 
 def projection(d, screen_center, v):
-    return (screen_center[0] + v.x*d/(v.z+d), screen_center[1] + v.y*d/(v.z+d))
+    f = d/(v.z+d)
+    return (screen_center[0] + v.x*f, screen_center[1] + v.y*f)
 
 def render_objects(screen, d, objects):
     w = screen.get_width()
@@ -51,7 +52,7 @@ def render_objects(screen, d, objects):
             ts = o.trigons()
             for t in ts:
                 for i in range(3):
-                    pygame.draw.line(screen, (255, 255, 255), projection(d, screen_center, vs[t[i]]), projection(d, screen_center, vs[t[(i+1) % len(vs)]]))
+                    pygame.draw.line(screen, (255, 255, 255), projection(d, screen_center, vs[t[i]]), projection(d, screen_center, vs[t[(i+1) % 3]]))
 
 
 pygame.init()
@@ -61,7 +62,7 @@ running = True
 
 objects = []
 for i in range(10):
-    objects.append(Blupp(i*100))
+    objects.append(FlatQuad(-400, -300, i*100, 800, 600))
 
 while running:
     # poll for events
