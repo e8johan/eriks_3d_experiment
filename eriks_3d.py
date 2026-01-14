@@ -58,7 +58,9 @@ class Rotation(Transformation):
 
 class Object:
     def __init__(self):
+        self._transformed_vertexes = []
         self._projected_vertexes = []
+        self._normals = []
         self._transformations = []
 
     def reset_transformation(self):
@@ -67,14 +69,37 @@ class Object:
     def add_transformation(self, t):
         self._transformations.append(t)
 
+    def update_normals(self):
+        # TODO optimize with a fixed list size later, as we know the size of the list
+        self._normals = []
+        for t in self.trigons():
+            X1 = self._transformed_vertexes[t[0]].x
+            Y1 = self._transformed_vertexes[t[0]].y
+            Z1 = self._transformed_vertexes[t[0]].z
+            X2 = self._transformed_vertexes[t[1]].x
+            Y2 = self._transformed_vertexes[t[1]].y
+            Z2 = self._transformed_vertexes[t[1]].z
+            X3 = self._transformed_vertexes[t[2]].x
+            Y3 = self._transformed_vertexes[t[2]].y
+            Z3 = self._transformed_vertexes[t[2]].z
+
+            normal = ((Y1-Y2)*(Z1-Z3) - (Z1-Z2)*(Y1-Y3), -((Z1-Z2)*(X1-X3) - (X1-X2)*(Z1-Z3)), (X1-X2)*(Y1-Y3) - (Y1-Y2)*(X1-X3))
+            self._normals.append(normal)
+
+    def update_transformation(self):
+        # TODO optimize with a fixed list size later, as we know the size of the list
+        self._transformed_vertexes = []
+        for v in self.vertexes():
+            t_v = v
+            for t in self._transformations:
+                t_v = t.transform(t_v)
+            self._transformed_vertexes.append(t_v)
+
     def update_projection(self, d, screen_center):
         # TODO optimize with a fixed list size later, as we know the size of the list
         self._projected_vertexes = []
-        for v in self.vertexes():
-            r_v = v
-            for t in self._transformations:
-                r_v = t.transform(r_v)
-            self._projected_vertexes.append(projection(d, screen_center, r_v))
+        for v in self._transformed_vertexes:
+            self._projected_vertexes.append(projection(d, screen_center, v))
 
     def projected_vertex(self, index):
         return self._projected_vertexes[index]
@@ -91,6 +116,15 @@ class Object:
         """
         return []
 
+    def trigon_visible(self, index):
+        """
+            Returns True if the trigon for the given index is visible
+        """
+        if self._normals[index][2] < 0:
+            return True
+        else:
+            return False
+
     def visible(self):
         """
             Returns True if the object is visible
@@ -103,7 +137,12 @@ class Box(Object):
         self._vs = [Vector3(x, y, z), Vector3(x+w, y, z), Vector3(x+w, y+w, z), Vector3(x, y+w, z), Vector3(x, y, z+d), Vector3(x+w, y, z+d), Vector3(x+w, y+w, z+d), Vector3(x, y+w, z+d)]
 
     def trigons(self):
-        return [(0, 1, 3), (1, 2, 3), (4, 5, 7), (5, 6, 7), (0, 1, 4, 5), (1, 4, 5), (1, 5, 2), (2, 5, 6), (3, 2, 7), (7, 2, 6), (0, 4, 3), (3, 4, 7)]
+        return [(0, 3, 1), (1, 3, 2), # Front
+                (4, 5, 7), (5, 6, 7), # Back
+                (0, 1, 4), (1, 5, 4), # Top
+                (1, 2, 5), (2, 6, 5), # Right
+                (3, 7, 2), (7, 6, 2), # Bottom
+                (0, 4, 3), (3, 4, 7)] # Left
 
     def vertexes(self):
         return self._vs
@@ -130,19 +169,22 @@ def render_objects(screen, d, objects):
     screen_center = (w/2, h/2)
 
     for o in objects:
+        o.update_transformation()
         o.update_projection(d, screen_center)
         if o.visible():
+            o.update_normals()
             ts = o.trigons()
-            for t in ts:
-                for i in range(3):
-                    pygame.draw.line(screen, (255, 255, 255), o.projected_vertex(t[i]), o.projected_vertex(t[(i+1) % 3]))
+            for i in range(len(ts)):
+                if o.trigon_visible(i):
+                    t = ts[i]
+                    pygame.draw.polygon(screen, (255, 255, 255), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [Box(-100, -100, 100, 200, 200, 200)]
+objects = [Box(-100, -100, 100, 200, 200, 200), Box(-400, -50, 100, 100, 100, 100)]
 
 delta = 1
 z = 0
@@ -172,5 +214,10 @@ while running:
     objects[0].add_transformation(Translate(0, 0, -200))
     objects[0].add_transformation(Rotation(z*3.14/90.0, 0, z*3.14/180.0))
     objects[0].add_transformation(Translate(0, 0, 200))
+
+    objects[1].reset_transformation()
+    objects[1].add_transformation(Translate(350, 0, -150))
+    objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
+    objects[1].add_transformation(Translate(-350, 0, 150))
 
 pygame.quit()
