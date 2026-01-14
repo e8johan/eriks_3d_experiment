@@ -7,6 +7,18 @@ class Vector3:
         self.z = z
 
 class Object:
+    def __init__(self):
+        self._projected_vertexes = []
+
+    def update_projection(self, d, screen_center):
+        # TODO optimize with a fixed list size later, as we know the size of the list
+        self._projected_vertexes = []
+        for v in self.vertexes():
+            self._projected_vertexes.append(projection(d, screen_center, v))
+
+    def projected_vertex(self, index):
+        return self._projected_vertexes[index]
+
     def vertexes(self):
         """
             Return a list of Vector3 representing the vertexes of the object
@@ -27,6 +39,7 @@ class Object:
 
 class FlatQuad(Object):
     def __init__(self, x, y, z, w, h):
+        super().__init__()
         self._vs = [Vector3(x, y, z), Vector3(x+w, y, z), Vector3(x+w, y+w, z), Vector3(x, y+w, z)]
 
     def trigons(self):
@@ -47,12 +60,12 @@ def render_objects(screen, d, objects):
     screen_center = (w/2, h/2)
 
     for o in objects:
+        o.update_projection(d, screen_center)
         if o.visible():
-            vs = o.vertexes()
             ts = o.trigons()
             for t in ts:
                 for i in range(3):
-                    pygame.draw.line(screen, (255, 255, 255), projection(d, screen_center, vs[t[i]]), projection(d, screen_center, vs[t[(i+1) % 3]]))
+                    pygame.draw.line(screen, (255, 255, 255), o.projected_vertex(t[i]), o.projected_vertex(t[(i+1) % 3]))
 
 
 pygame.init()
