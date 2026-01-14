@@ -48,7 +48,6 @@ class FlatQuad(Object):
     def vertexes(self):
         return self._vs
 
-
 def projection(d, screen_center, v):
     f = d/(v.z+d)
     return (screen_center[0] + v.x*f, screen_center[1] + v.y*f)
@@ -67,15 +66,15 @@ def render_objects(screen, d, objects):
                 for i in range(3):
                     pygame.draw.line(screen, (255, 255, 255), o.projected_vertex(t[i]), o.projected_vertex(t[(i+1) % 3]))
 
-
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = []
-for i in range(10):
-    objects.append(FlatQuad(-400, -300, i*100, 800, 600))
+objects = [FlatQuad(-400, -300, 100, 800, 600)]
+
+delta = 10
+z = 100
 
 while running:
     # poll for events
@@ -93,5 +92,11 @@ while running:
     pygame.display.flip()
 
     clock.tick(60)  # limits FPS to 60
+
+    z += delta
+    if z > 1000 or z < 100:
+        delta = -delta
+
+    objects[0] = FlatQuad(-400, -300, z, 800, 600)
 
 pygame.quit()
