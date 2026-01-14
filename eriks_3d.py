@@ -1,3 +1,4 @@
+from math import sin, cos
 import pygame
 
 class Vector3:
@@ -32,6 +33,27 @@ class Scale(Transformation):
 
     def transform(self, v):
         return Vector3(v.x * self.s_x, v.y * self.s_y, v.z * self.s_z)
+
+class Rotation(Transformation):
+    def __init__(self, r_x, r_y, r_z):
+        super().__init__()
+        self.r_x = r_x
+        self.r_y = r_y
+        self.r_z = r_z
+
+    def transform(self, v):
+        s1 = sin(self.r_y)
+        c1 = cos(self.r_y)
+        s2 = sin(self.r_x)
+        c2 = cos(self.r_x)
+        s3 = sin(self.r_z)
+        c3 = cos(self.r_z)
+
+        Xv = v.x*(s1*s2*s3 + c1*c3) + v.y*(c2*s3) + v.z*(c1*s2*s3 - c3*s1)
+        Yv = v.x*(c3*s1*s2 - c1*s3) + v.y*(c2*c3) + v.z*(c1*c3*s2 + s1*s3)
+        Zv = v.x*(c1*s2*s3 - c3*s1) + v.y*(-s2)   + v.z*(c1*c2)
+
+        return Vector3(Xv, Yv, Zv)
 
 
 class Object:
@@ -75,6 +97,17 @@ class Object:
         """
         return True
 
+class Box(Object):
+    def __init__(self, x, y, z, w, h, d):
+        super().__init__()
+        self._vs = [Vector3(x, y, z), Vector3(x+w, y, z), Vector3(x+w, y+w, z), Vector3(x, y+w, z), Vector3(x, y, z+d), Vector3(x+w, y, z+d), Vector3(x+w, y+w, z+d), Vector3(x, y+w, z+d)]
+
+    def trigons(self):
+        return [(0, 1, 3), (1, 2, 3), (4, 5, 7), (5, 6, 7), (0, 1, 4, 5), (1, 4, 5), (1, 5, 2), (2, 5, 6), (3, 2, 7), (7, 2, 6), (0, 4, 3), (3, 4, 7)]
+
+    def vertexes(self):
+        return self._vs
+
 class FlatQuad(Object):
     def __init__(self, x, y, z, w, h):
         super().__init__()
@@ -109,10 +142,10 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [FlatQuad(-400, -300, 100, 800, 600)]
+objects = [Box(-100, -100, 100, 200, 200, 200)]
 
-delta = 10
-z = 100
+delta = 1
+z = 0
 
 while running:
     # poll for events
@@ -132,10 +165,12 @@ while running:
     clock.tick(60)  # limits FPS to 60
 
     z += delta
-    if z > 1000 or z < 100:
+    if z > 360 or z < 0:
         delta = -delta
 
     objects[0].reset_transformation()
-    objects[0].add_transformation(Scale(z/1000.0, z/1000.0, z/1000.0))
+    objects[0].add_transformation(Translate(0, 0, -200))
+    objects[0].add_transformation(Rotation(z*3.14/90.0, 0, z*3.14/180.0))
+    objects[0].add_transformation(Translate(0, 0, 200))
 
 pygame.quit()
