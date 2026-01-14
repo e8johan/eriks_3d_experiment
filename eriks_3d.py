@@ -23,6 +23,17 @@ class Translate(Transformation):
     def transform(self, v):
         return Vector3(v.x + self.d_x, v.y + self.d_y, v.z + self.d_z)
 
+class Scale(Transformation):
+    def __init__(self, s_x, s_y, s_z):
+        super().__init__()
+        self.s_x = s_x
+        self.s_y = s_y
+        self.s_z = s_z
+
+    def transform(self, v):
+        return Vector3(v.x * self.s_x, v.y * self.s_y, v.z * self.s_z)
+
+
 class Object:
     def __init__(self):
         self._projected_vertexes = []
@@ -101,7 +112,7 @@ running = True
 objects = [FlatQuad(-400, -300, 100, 800, 600)]
 
 delta = 10
-z = 0
+z = 100
 
 while running:
     # poll for events
@@ -121,10 +132,10 @@ while running:
     clock.tick(60)  # limits FPS to 60
 
     z += delta
-    if z > 1000 or z < 0:
+    if z > 1000 or z < 100:
         delta = -delta
 
     objects[0].reset_transformation()
-    objects[0].add_transformation(Translate(0, 0, z))
+    objects[0].add_transformation(Scale(z/1000.0, z/1000.0, z/1000.0))
 
 pygame.quit()
