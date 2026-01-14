@@ -6,15 +6,42 @@ class Vector3:
         self.y = y
         self.z = z
 
+class Transformation:
+    def transform(self, v):
+        """
+            Transforms a given vector to a new vector
+        """
+        return Vector3(v.x, v.y, v.z)
+
+class Translate(Transformation):
+    def __init__(self, d_x, d_y, d_z):
+        super().__init__()
+        self.d_x = d_x
+        self.d_y = d_y
+        self.d_z = d_z
+
+    def transform(self, v):
+        return Vector3(v.x + self.d_x, v.y + self.d_y, v.z + self.d_z)
+
 class Object:
     def __init__(self):
         self._projected_vertexes = []
+        self._transformations = []
+
+    def reset_transformation(self):
+        self._transformations = []
+
+    def add_transformation(self, t):
+        self._transformations.append(t)
 
     def update_projection(self, d, screen_center):
         # TODO optimize with a fixed list size later, as we know the size of the list
         self._projected_vertexes = []
         for v in self.vertexes():
-            self._projected_vertexes.append(projection(d, screen_center, v))
+            r_v = v
+            for t in self._transformations:
+                r_v = t.transform(r_v)
+            self._projected_vertexes.append(projection(d, screen_center, r_v))
 
     def projected_vertex(self, index):
         return self._projected_vertexes[index]
@@ -74,7 +101,7 @@ running = True
 objects = [FlatQuad(-400, -300, 100, 800, 600)]
 
 delta = 10
-z = 100
+z = 0
 
 while running:
     # poll for events
@@ -94,9 +121,10 @@ while running:
     clock.tick(60)  # limits FPS to 60
 
     z += delta
-    if z > 1000 or z < 100:
+    if z > 1000 or z < 0:
         delta = -delta
 
-    objects[0] = FlatQuad(-400, -300, z, 800, 600)
+    objects[0].reset_transformation()
+    objects[0].add_transformation(Translate(0, 0, z))
 
 pygame.quit()
