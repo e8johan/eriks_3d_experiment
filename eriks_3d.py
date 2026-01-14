@@ -8,11 +8,29 @@ class Vector3:
 
 class Object:
     def vertexes(self):
+        """
+            Return a list of Vector3 representing the vertexes of the object
+        """
         return []
+
+    def trigons(self):
+        """
+            Return a list of tripple-Tuples with trigon corners
+        """
+        return []
+
+    def visible(self):
+        """
+            Returns True if the object is visible
+        """
+        return True
 
 class Blupp(Object):
     def __init__(self, z):
         self.z = z
+
+    def trigons(self):
+        return [(0, 1, 2)]
 
     def vertexes(self):
         return [Vector3(-100, -100, self.z), Vector3(100, -500, self.z), Vector3(400, 300, self.z)]
@@ -28,9 +46,12 @@ def render_objects(screen, d, objects):
     screen_center = (w/2, h/2)
 
     for o in objects:
-        vs = o.vertexes()
-        for i in range(len(vs)):
-            pygame.draw.line(screen, (255, 255, 255), projection(d, screen_center, vs[i]), projection(d, screen_center, vs[(i+1) % len(vs)]))
+        if o.visible():
+            vs = o.vertexes()
+            ts = o.trigons()
+            for t in ts:
+                for i in range(3):
+                    pygame.draw.line(screen, (255, 255, 255), projection(d, screen_center, vs[t[i]]), projection(d, screen_center, vs[t[(i+1) % len(vs)]]))
 
 
 pygame.init()
