@@ -38,7 +38,9 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [Blupp(100), Blupp(200)]
+objects = []
+for i in range(10):
+    objects.append(Blupp(i*100))
 
 while running:
     # poll for events
