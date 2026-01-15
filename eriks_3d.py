@@ -1,4 +1,4 @@
-from math import sin, cos
+from math import sin, cos, sqrt
 import pygame
 
 class Vector3:
@@ -133,6 +133,9 @@ class Object:
         else:
             return False
 
+    def normal(self, index):
+        return self._normals[index]
+
     def visible(self):
         """
             Returns True if the object is visible
@@ -181,8 +184,10 @@ def render_objects(screen, d, objects):
             for i in range(len(ts)):
                 if o.trigon_visible(i):
                     t = ts[i]
-                    #pygame.draw.polygon(screen, (255, 255, 255), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
-                    pygame.draw.lines(screen, (255, 0, 0), True, (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
+                    n = o.normal(i)
+                    shade = n[0]/sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])/2+0.5
+                    pygame.draw.polygon(screen, (255*shade, 255*shade, 255*shade), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
+                    # pygame.draw.lines(screen, (255, 0, 0), True, (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
