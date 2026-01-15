@@ -118,6 +118,9 @@ class Object:
         """
         return []
 
+    def transformed_vertexes(self):
+        return self._transformed_vertexes
+
     def trigons(self):
         """
             Return a list of tripple-Tuples with trigon corners
@@ -222,6 +225,8 @@ def render_objects(screen, d, objects):
 
     screen_center = (w/2, h/2)
 
+    triangles = [] # We store all triangles in a list so that we can sort them in z-order before drawing them
+
     for o in objects:
         o.update_transformation()
         o.update_projection(d, screen_center)
@@ -232,9 +237,13 @@ def render_objects(screen, d, objects):
                 if o.trigon_visible(i):
                     t = ts[i]
                     n = o.normal(i)
+                    vs = o.transformed_vertexes()
                     shade = n[0]/sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])/2+0.5
-                    pygame.draw.polygon(screen, (255*shade, 255*shade, 255*shade), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
-                    # pygame.draw.lines(screen, (255, 0, 0), True, (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
+                    triangles.append( (vs[t[0]].z + vs[t[1]].z + vs[t[2]].z, (255*shade, 255*shade, 255*shade), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2]))) )
+
+    for t in sorted(triangles, key=lambda triangle:triangle[0], reverse=True):
+        pygame.draw.polygon(screen, t[1], t[2])
+        #pygame.draw.lines(screen, (255, 0, 0), True, t[2])
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
