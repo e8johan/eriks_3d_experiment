@@ -216,10 +216,6 @@ class StlMesh(Object):
     def vertexes(self):
         return self._vs
 
-def projection(d, screen_center, v):
-    f = d/(v.z+d)
-    return (screen_center[0] + v.x*f, screen_center[1] + v.y*f)
-
 def render_objects(screen, d, objects):
     w = screen.get_width()
     h = screen.get_height()
