@@ -174,7 +174,41 @@ class StlMesh(Object):
         super().__init__()
         self._ts = []
         self._vs = []
-        # TODO load the actual STL here
+
+        # State-machine to load a solid
+        #
+        #   This loader is quite forgiving, but it outputs unexpected file contents
+        with open(filename, 'r') as f:
+            state = 'in file'
+            for raw_line in f:
+                line = raw_line.strip()
+                match state:
+                    case 'in file':
+                        if line.startswith('solid ') or line == 'solid':
+                            state = 'in solid'
+                        else:
+                            print(state, line)
+                    case 'in solid':
+                        if line.startswith('facet normal '):
+                            pass
+                        elif line.startswith('outer loop'):
+                            state = 'in loop'
+                        elif line == 'endsolid':
+                            state = 'in file'
+                        else:
+                            print(state, line)
+                    case 'in loop':
+                        if line == 'endfacet':
+                            vss = len(self._vs)
+                            self._ts.append( (vss-3, vss-2, vss-1) )
+                            state = 'in solid'
+                        elif line == 'outer loop' or line == 'endloop':
+                            pass
+                        elif line.startswith('vertex '):
+                            parts = line.split(' ')
+                            self._vs.append( Vector3(float(parts[1]), float(parts[2]), float(parts[3])) )
+                        else:
+                            print(state, line)
 
     def trigons(self):
         return self._ts
@@ -246,8 +280,13 @@ while running:
     objects[0].add_transformation(projection_transformation)
 
     objects[1].reset_transformation()
+    objects[1].add_transformation(Scale(5.0, 5.0, 5.0))
     objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
+<<<<<<< HEAD
     objects[1].add_transformation(Translate(-350, 0, 150))
     objects[1].add_transformation(projection_transformation)
+=======
+    objects[1].add_transformation(Translate(-350, 0, 200))
+>>>>>>> ff64494 (Implementerat en enkel STL-laddare)
 
 pygame.quit()
