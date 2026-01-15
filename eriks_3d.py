@@ -55,6 +55,14 @@ class Rotation(Transformation):
 
         return Vector3(Xv, Yv, Zv)
 
+class Projection(Transformation):
+    def __init__(self, d):
+        super().__init__()
+        self.d = d
+
+    def transform(self, v):
+        f = self.d/(v.z+self.d)
+        return Vector3(v.x*f, v.y*f, v.z)
 
 class Object:
     def __init__(self):
@@ -99,7 +107,7 @@ class Object:
         # TODO optimize with a fixed list size later, as we know the size of the list
         self._projected_vertexes = []
         for v in self._transformed_vertexes:
-            self._projected_vertexes.append(projection(d, screen_center, v))
+            self._projected_vertexes.append( (v.x + screen_center[0], v.y + screen_center[1]) )
 
     def projected_vertex(self, index):
         return self._projected_vertexes[index]
@@ -158,10 +166,6 @@ class FlatQuad(Object):
     def vertexes(self):
         return self._vs
 
-def projection(d, screen_center, v):
-    f = d/(v.z+d)
-    return (screen_center[0] + v.x*f, screen_center[1] + v.y*f)
-
 def render_objects(screen, d, objects):
     w = screen.get_width()
     h = screen.get_height()
@@ -177,7 +181,8 @@ def render_objects(screen, d, objects):
             for i in range(len(ts)):
                 if o.trigon_visible(i):
                     t = ts[i]
-                    pygame.draw.polygon(screen, (255, 255, 255), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
+                    #pygame.draw.polygon(screen, (255, 255, 255), (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
+                    pygame.draw.lines(screen, (255, 0, 0), True, (o.projected_vertex(t[0]), o.projected_vertex(t[1]), o.projected_vertex(t[2])))
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -185,6 +190,8 @@ clock = pygame.time.Clock()
 running = True
 
 objects = [Box(-100, -100, 100, 200, 200, 200), Box(-400, -50, 100, 100, 100, 100)]
+
+projection_transformation = Projection(640)
 
 delta = 1
 z = 0
@@ -214,10 +221,12 @@ while running:
     objects[0].add_transformation(Translate(0, 0, -200))
     objects[0].add_transformation(Rotation(z*3.14/90.0, 0, z*3.14/180.0))
     objects[0].add_transformation(Translate(0, 0, 200))
+    objects[0].add_transformation(projection_transformation)
 
     objects[1].reset_transformation()
     objects[1].add_transformation(Translate(350, 0, -150))
     objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
     objects[1].add_transformation(Translate(-350, 0, 150))
+    objects[1].add_transformation(projection_transformation)
 
 pygame.quit()
