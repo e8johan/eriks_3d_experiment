@@ -277,11 +277,7 @@ while running:
     objects[1].reset_transformation()
     objects[1].add_transformation(Scale(5.0, 5.0, 5.0))
     objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
-<<<<<<< HEAD
     objects[1].add_transformation(Translate(-350, 0, 150))
     objects[1].add_transformation(projection_transformation)
-=======
-    objects[1].add_transformation(Translate(-350, 0, 200))
->>>>>>> ff64494 (Implementerat en enkel STL-laddare)
 
 pygame.quit()
