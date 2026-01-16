@@ -1,3 +1,5 @@
+import cProfile
+
 from math import sin, cos, sqrt
 import pygame
 
@@ -245,8 +247,11 @@ objects = [Box(-100, -100, 100, 200, 200, 200), StlMesh("Owl_Facing_Left_fixed_s
 
 projection_transformation = Projection(640)
 
-delta = 1
+delta = 10
 z = 0
+
+profile = cProfile.Profile()
+profile.enable()
 
 while running:
     # poll for events
@@ -268,6 +273,7 @@ while running:
     z += delta
     if z > 360 or z < 0:
         delta = -delta
+        running = False
 
     objects[0].reset_transformation()
     objects[0].add_transformation(Translate(0, 0, -200))
@@ -280,5 +286,8 @@ while running:
     objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
     objects[1].add_transformation(Translate(-350, 0, 150))
     objects[1].add_transformation(projection_transformation)
+
+profile.disable()
+profile.dump_stats("profile_stats")
 
 pygame.quit()
