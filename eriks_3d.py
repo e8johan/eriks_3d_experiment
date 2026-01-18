@@ -94,16 +94,18 @@ class Object:
             normal = ((Y1-Y2)*(Z1-Z3) - (Z1-Z2)*(Y1-Y3), -((Z1-Z2)*(X1-X3) - (X1-X2)*(Z1-Z3)), (X1-X2)*(Y1-Y3) - (Y1-Y2)*(X1-X3))
             self._normals.append(normal)
 
-    def update_transformation(self):
+    def update_transformation(self, camera):
         # TODO optimize with a fixed list size later, as we know the size of the list
         self._transformed_vertexes = []
         for v in self.vertexes():
             t_v = v
             for t in self._transformations:
                 t_v = t.transform(t_v)
+            for t in camera._transformations:
+                t_v = t.transform(t_v)
             self._transformed_vertexes.append(t_v)
 
-    def update_projection(self, d, screen_center):
+    def update_projection(self, screen_center):
         # TODO optimize with a fixed list size later, as we know the size of the list
         self._projected_vertexes = []
         for v in self._transformed_vertexes:
@@ -219,7 +221,28 @@ class StlMesh(Object):
     def vertexes(self):
         return self._vs
 
-def render_objects(screen, d, objects):
+class Camera:
+    def __init__(self):
+        self._position = Vector3(0.0, 0.0, 0.0)
+        self._translation = Translate(0.0, 0.0, 0.0)
+        self._rotation = Transformation()
+        self._projection = Transformation()
+        self._transformations = [self._translation, self._rotation, self._projection]
+
+    def set_projection(self, projection):
+        self._projection = projection
+        self._transformations[2] = self._projection
+
+    def position(self):
+        return self._position
+
+    def set_position(self, p):
+        self._position = p
+        self._translation.d_x = -p.x
+        self._translation.d_y = -p.y
+        self._translation.d_z = -p.z
+
+def render_objects(screen, camera, objects):
     w = screen.get_width()
     h = screen.get_height()
 
@@ -228,8 +251,8 @@ def render_objects(screen, d, objects):
     triangles = [] # We store all triangles in a list so that we can sort them in z-order before drawing them
 
     for o in objects:
-        o.update_transformation()
-        o.update_projection(d, screen_center)
+        o.update_transformation(camera)
+        o.update_projection(screen_center)
         if o.visible():
             o.update_normals()
             ts = o.trigons()
@@ -250,12 +273,10 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [Box(-100, -100, 100, 200, 200, 200), StlMesh("Owl_Facing_Left_fixed_sc.stl")]
+objects = [Box(-100, -100, 100, 200, 200, 200)]
 
-projection_transformation = Projection(640)
-
-delta = 1
-z = 0
+camera = Camera()
+camera.set_projection(Projection(640))
 
 while running:
     # poll for events
@@ -264,30 +285,27 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    keys = pygame.key.get_pressed()
+
+    p = camera.position()
+    if keys[pygame.K_w]:
+        p.z += 1
+    if keys[pygame.K_s]:
+        p.z -= 1
+    if keys[pygame.K_a]:
+        p.x -= 1
+    if keys[pygame.K_d]:
+        p.x += 1
+    camera.set_position(p)
+
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
 
-    render_objects(screen, 640, objects)
+    render_objects(screen, camera, objects)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
 
     clock.tick(60)  # limits FPS to 60
-
-    z += delta
-    if z > 360 or z < 0:
-        delta = -delta
-
-    objects[0].reset_transformation()
-    objects[0].add_transformation(Translate(0, 0, -200))
-    objects[0].add_transformation(Rotation(z*3.14/90.0, 0, z*3.14/180.0))
-    objects[0].add_transformation(Translate(0, 0, 200))
-    objects[0].add_transformation(projection_transformation)
-
-    objects[1].reset_transformation()
-    objects[1].add_transformation(Scale(5.0, 5.0, 5.0))
-    objects[1].add_transformation(Rotation(0, z*3.14/180.0, z*3.14/90.0))
-    objects[1].add_transformation(Translate(-350, 0, 150))
-    objects[1].add_transformation(projection_transformation)
 
 pygame.quit()
