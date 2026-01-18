@@ -224,23 +224,34 @@ class StlMesh(Object):
 class Camera:
     def __init__(self):
         self._position = Vector3(0.0, 0.0, 0.0)
-        self._translation = Translate(0.0, 0.0, 0.0)
-        self._rotation = Transformation()
-        self._projection = Transformation()
-        self._transformations = [self._translation, self._rotation, self._projection]
+        self._rotation = Vector3(0.0, 0.0, 0.0)
+
+        self.TRANSLATION_INDEX = 0
+        self.ROTATION_INDEX = 1
+        self.PROJECTION_INDEX = 2
+        self._transformations = [Translate(0.0, 0.0, 0.0), Rotation(0.0, 0.0, 0.0), Transformation()]
 
     def set_projection(self, projection):
         self._projection = projection
-        self._transformations[2] = self._projection
+        self._transformations[self.PROJECTION_INDEX] = self._projection
+
+    def rotation(self):
+        return self._rotation
+
+    def set_rotation(self, r):
+        self._rotation = r
+        self._transformations[self.ROTATION_INDEX].r_x = r.x
+        self._transformations[self.ROTATION_INDEX].r_y = r.y
+        self._transformations[self.ROTATION_INDEX].r_z = r.z
 
     def position(self):
         return self._position
 
     def set_position(self, p):
         self._position = p
-        self._translation.d_x = -p.x
-        self._translation.d_y = -p.y
-        self._translation.d_z = -p.z
+        self._transformations[self.TRANSLATION_INDEX].d_x = -p.x
+        self._transformations[self.TRANSLATION_INDEX].d_y = -p.y
+        self._transformations[self.TRANSLATION_INDEX].d_z = -p.z
 
 def render_objects(screen, camera, objects):
     w = screen.get_width()
@@ -273,7 +284,10 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-objects = [Box(-100, -100, 100, 200, 200, 200)]
+objects = [Box(-100, -100, 100, 200, 200, 200),
+           Box(-75, -270, 125, 150, 150, 150),
+           Box(-50, -390, 150, 100, 100, 100),
+           Box(-600, -100, 100, 200, 200, 200) ]
 
 camera = Camera()
 camera.set_projection(Projection(640))
@@ -288,15 +302,23 @@ while running:
     keys = pygame.key.get_pressed()
 
     p = camera.position()
+    r = camera.rotation()
+
+    # TODO attempt (hackish) to walk in the direction we're looking'
+    direction = camera._transformations[1].transform(Vector3(0.0, 0.0, 1.0))
+
     if keys[pygame.K_w]:
-        p.z += 1
+        p.x += direction.x
+        p.z += direction.z
     if keys[pygame.K_s]:
-        p.z -= 1
+        p.x -= direction.x
+        p.z -= direction.z
     if keys[pygame.K_a]:
-        p.x -= 1
+        r.y += 0.01
     if keys[pygame.K_d]:
-        p.x += 1
+        r.y -= 0.01
     camera.set_position(p)
+    camera.set_rotation(r)
 
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
